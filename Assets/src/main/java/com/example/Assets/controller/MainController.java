@@ -1,11 +1,13 @@
 package com.example.Assets.controller;
 
+import com.example.Assets.auth.CustomUserDetails;
 import com.example.Assets.model.Asset;
 import com.example.Assets.model.model;
 import com.example.Assets.service.AService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/local")
-@CrossOrigin(origins = "*")
 public class MainController {
 
     private final AService aService;
@@ -23,16 +24,16 @@ public class MainController {
     }
 
     @GetMapping("/ledger")
-    public ResponseEntity<List<Asset>> getLedger() {
-        return ResponseEntity.ok(aService.getLedger());
+    public ResponseEntity<List<Asset>> getLedger(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(aService.getLedgerForAuthor(user.getAuthorId()));
     }
 
     @PostMapping("/process")
     public ResponseEntity<model<Asset>> processFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("authorId") String authorId) {
+            @AuthenticationPrincipal CustomUserDetails user) {
 
-        model<Asset> result = aService.processAndProtectAsset(file, authorId);
+        model<Asset> result = aService.processAndProtectAsset(file, user.getAuthorId());
 
         if (result.isSuccess()) {
             return ResponseEntity.ok(result);

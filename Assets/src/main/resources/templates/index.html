@@ -269,12 +269,80 @@
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        #authScreen {
+            position: fixed; inset: 0; z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at center, #1a1d24 0%, var(--bg-base) 70%);
+        }
+        .auth-card {
+            width: 100%; max-width: 420px; padding: 40px;
+            background: var(--bg-panel); border: 1px solid var(--border-subtle);
+            border-radius: 16px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        }
+        .auth-card h1 { font-size: 1.4rem; margin-bottom: 8px; }
+        .auth-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; }
+        .auth-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+        .auth-tab {
+            flex: 1; padding: 10px; border: none; border-radius: 8px;
+            background: transparent; color: var(--text-muted); cursor: pointer; font-weight: 600;
+        }
+        .auth-tab.active { background: rgba(0, 242, 254, 0.12); color: var(--accent-cyan); }
+        .auth-field { margin-bottom: 16px; }
+        .auth-field label { display: block; margin-bottom: 6px; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .auth-field input {
+            width: 100%; padding: 12px 14px; border-radius: 8px;
+            border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.25);
+            color: var(--text-main); font-size: 0.95rem;
+        }
+        .auth-field input:focus { outline: none; border-color: var(--accent-cyan); }
+        .auth-error { color: var(--error); font-size: 0.85rem; min-height: 20px; margin-bottom: 12px; }
+        #appShell { display: none; flex-direction: column; height: 100vh; }
+        #appShell.visible { display: flex; }
+        .user-pill {
+            margin-left: auto; font-size: 0.8rem; color: var(--text-muted);
+            font-family: monospace; display: flex; align-items: center; gap: 12px;
+        }
+        .btn-logout {
+            background: transparent; border: 1px solid var(--border-subtle);
+            color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer;
+        }
+        .btn-logout:hover { color: #fff; border-color: var(--text-muted); }
     </style>
 </head>
 <body>
+
+    <div id="authScreen">
+        <div class="auth-card">
+            <h1 class="brand-text" style="margin-bottom: 4px;">KEYED VAULT</h1>
+            <p>Sign in to protect assets and access your ledger.</p>
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab active" id="tabLogin" onclick="app.showAuthTab('login')">Sign in</button>
+                <button type="button" class="auth-tab" id="tabRegister" onclick="app.showAuthTab('register')">Register</button>
+            </div>
+            <div id="authError" class="auth-error"></div>
+            <form id="loginForm" onsubmit="app.handleLogin(event)">
+                <div class="auth-field"><label>Email</label><input type="email" id="loginEmail" required autocomplete="email"></div>
+                <div class="auth-field"><label>Password</label><input type="password" id="loginPassword" required autocomplete="current-password" minlength="8"></div>
+                <button type="submit" class="btn-primary" style="width:100%;">Sign in</button>
+            </form>
+            <form id="registerForm" style="display:none;" onsubmit="app.handleRegister(event)">
+                <div class="auth-field"><label>Display name</label><input type="text" id="regDisplayName" autocomplete="name" placeholder="Optional"></div>
+                <div class="auth-field"><label>Email</label><input type="email" id="regEmail" required autocomplete="email"></div>
+                <div class="auth-field"><label>Password</label><input type="password" id="regPassword" required autocomplete="new-password" minlength="8" placeholder="Min. 8 characters"></div>
+                <button type="submit" class="btn-primary" style="width:100%;">Create account</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="appShell">
     <div class="top-bar">
-        <img src="static/images/logo.jpg" alt="KEYED Logo" class="logo-img">
+        <img src="/static/images/logo.jpg" alt="KEYED Logo" class="logo-img">
         <span class="brand-text">KEYED | ENTERPRISE VAULT</span>
+        <div class="user-pill">
+            <span id="userAuthorId">—</span>
+            <button type="button" class="btn-logout" onclick="app.logout()">Sign out</button>
+        </div>
     </div>
     <div class="workspace">
         
@@ -367,7 +435,7 @@
             <div style="background: var(--bg-panel); padding: 40px; border-radius: 12px; max-width: 600px; border: 1px solid var(--border-subtle);">
                 <div style="margin-bottom: 25px;">
                     <label style="display: block; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Global Author ID</label>
-                    <input type="text" value="ID:7734_EMIR" disabled style="padding: 12px 15px; width: 100%; border-radius: 6px; border: 1px solid #333; background: rgba(0,0,0,0.3); color: #888; font-family: monospace;">
+                    <input type="text" id="settingsAuthorId" value="—" disabled style="padding: 12px 15px; width: 100%; border-radius: 6px; border: 1px solid #333; background: rgba(0,0,0,0.3); color: #888; font-family: monospace;">
                 </div>
                 <div style="margin-bottom: 35px;">
                     <label style="display: block; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Watermark Intensity (Alpha)</label>
@@ -377,6 +445,7 @@
             </div>
         </div>
 
+    </div>
     </div>
 
     <div id="assetModal" class="vault-modal">
@@ -394,8 +463,122 @@
 
     <script>
         const app = {
-            AUTHOR_ID: "ID:7734_EMIR",
+            TOKEN_KEY: 'keyed_jwt',
+            profile: null,
             MAX_FILE_SIZE_MB: 50,
+
+            getToken: () => sessionStorage.getItem(app.TOKEN_KEY),
+
+            apiFetch: (url, options = {}) => {
+                const headers = new Headers(options.headers || {});
+                const token = app.getToken();
+                if (token) headers.set('Authorization', 'Bearer ' + token);
+                return fetch(url, { ...options, headers });
+            },
+
+            showAuthTab: (tab) => {
+                const login = tab === 'login';
+                document.getElementById('loginForm').style.display = login ? 'block' : 'none';
+                document.getElementById('registerForm').style.display = login ? 'none' : 'block';
+                document.getElementById('tabLogin').classList.toggle('active', login);
+                document.getElementById('tabRegister').classList.toggle('active', !login);
+                document.getElementById('authError').textContent = '';
+            },
+
+            setAuthError: (msg) => { document.getElementById('authError').textContent = msg || ''; },
+
+            applySession: (authPayload) => {
+                sessionStorage.setItem(app.TOKEN_KEY, authPayload.token);
+                app.profile = {
+                    email: authPayload.email,
+                    displayName: authPayload.displayName,
+                    authorId: authPayload.authorId
+                };
+                document.getElementById('userAuthorId').textContent = app.profile.authorId;
+                document.getElementById('settingsAuthorId').value = app.profile.authorId;
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('appShell').classList.add('visible');
+            },
+
+            logout: () => {
+                sessionStorage.removeItem(app.TOKEN_KEY);
+                app.profile = null;
+                document.getElementById('appShell').classList.remove('visible');
+                document.getElementById('authScreen').style.display = 'flex';
+                app.setAuthError('');
+            },
+
+            handleLogin: async (e) => {
+                e.preventDefault();
+                app.setAuthError('');
+                try {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: document.getElementById('loginEmail').value,
+                            password: document.getElementById('loginPassword').value
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        app.setAuthError(data.message || 'Login failed');
+                        return;
+                    }
+                    app.applySession(data.payload);
+                    app.showToast('Signed in successfully');
+                } catch {
+                    app.setAuthError('Cannot reach server');
+                }
+            },
+
+            handleRegister: async (e) => {
+                e.preventDefault();
+                app.setAuthError('');
+                try {
+                    const res = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: document.getElementById('regEmail').value,
+                            password: document.getElementById('regPassword').value,
+                            displayName: document.getElementById('regDisplayName').value || null
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        app.setAuthError(data.message || 'Registration failed');
+                        return;
+                    }
+                    app.applySession(data.payload);
+                    app.showToast('Account created');
+                } catch {
+                    app.setAuthError('Cannot reach server');
+                }
+            },
+
+            initAuth: async () => {
+                const token = app.getToken();
+                if (!token) return;
+                try {
+                    const res = await app.apiFetch('/api/auth/me');
+                    if (!res.ok) { app.logout(); return; }
+                    const me = await res.json();
+                    app.profile = me;
+                    document.getElementById('userAuthorId').textContent = me.authorId;
+                    document.getElementById('settingsAuthorId').value = me.authorId;
+                    document.getElementById('authScreen').style.display = 'none';
+                    document.getElementById('appShell').classList.add('visible');
+                } catch {
+                    app.logout();
+                }
+            },
+
+            fetchProtectedBlob: async (url) => {
+                const res = await app.apiFetch(url);
+                if (!res.ok) throw new Error('Access denied');
+                return res.blob();
+            },
             
             switchTab: (tabId, element) => {
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -415,35 +598,54 @@
                 setTimeout(() => { toast.remove(); }, 5000);
             },
 
-            viewAsset: (assetHash, originalFileName) => {
+            viewAsset: async (assetHash, originalFileName) => {
                 const protectedFileName = `KEYED_${assetHash}_${originalFileName}`;
-                const fileUrl = `/vault/protected/${protectedFileName}`;
+                const fileUrl = `/vault/protected/${encodeURIComponent(protectedFileName)}`;
                 
                 document.getElementById('modalHash').innerText = `DNA HASH: ${assetHash}`;
                 document.getElementById('modalFileName').innerText = `FILE: ${originalFileName}`;
                 
                 const container = document.getElementById('mediaContainer');
-                container.innerHTML = ''; 
+                container.innerHTML = '<p style="color:var(--text-muted);">Loading secured preview...</p>';
+                document.getElementById('assetModal').style.display = 'block';
                 
                 const ext = originalFileName.split('.').pop().toLowerCase();
                 const images = ['png', 'jpg', 'jpeg', 'webp', 'bmp'];
                 const videos = ['mp4', 'webm', 'ogg', 'mov', 'avi'];
                 
-                if (images.includes(ext)) {
-                    container.innerHTML = `<img src="${fileUrl}" class="preview-media" alt="Protected Asset">`;
-                } else if (videos.includes(ext)) {
-                    container.innerHTML = `<video src="${fileUrl}" class="preview-media" controls autoplay></video>`;
-                } else {
-                    container.innerHTML = `
-                        <div style="padding: 60px; background: rgba(0,0,0,0.4); border-radius: 12px; margin-bottom: 25px;">
-                            <h2 style="color: var(--accent-cyan); margin-bottom: 15px;">📦 BINARY ASSET</h2>
-                            <p style="color: var(--text-muted); margin-bottom: 25px;">Secure preview not available for .${ext} format.</p>
-                            <a href="${fileUrl}" target="_blank" class="btn-primary" style="text-decoration: none; display: inline-block;">⬇️ Download Secured File</a>
-                        </div>
-                    `;
+                try {
+                    if (images.includes(ext) || videos.includes(ext)) {
+                        const blob = await app.fetchProtectedBlob(fileUrl);
+                        const objUrl = URL.createObjectURL(blob);
+                        if (images.includes(ext)) {
+                            container.innerHTML = `<img src="${objUrl}" class="preview-media" alt="Protected Asset">`;
+                        } else {
+                            container.innerHTML = `<video src="${objUrl}" class="preview-media" controls autoplay></video>`;
+                        }
+                    } else {
+                        container.innerHTML = `
+                            <div style="padding: 60px; background: rgba(0,0,0,0.4); border-radius: 12px; margin-bottom: 25px;">
+                                <h2 style="color: var(--accent-cyan); margin-bottom: 15px;">📦 BINARY ASSET</h2>
+                                <p style="color: var(--text-muted); margin-bottom: 25px;">Secure preview not available for .${ext} format.</p>
+                                <button type="button" class="btn-primary" onclick="app.downloadProtected('${fileUrl}', '${originalFileName.replace(/'/g, "\\'")}')">⬇️ Download Secured File</button>
+                            </div>
+                        `;
+                    }
+                } catch {
+                    container.innerHTML = '<p style="color:var(--error);">Could not load protected file.</p>';
                 }
-                
-                document.getElementById('assetModal').style.display = 'block';
+            },
+
+            downloadProtected: async (url, filename) => {
+                try {
+                    const blob = await app.fetchProtectedBlob(url);
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    a.click();
+                } catch {
+                    app.showToast('Download failed', 'error');
+                }
             },
 
             closeVaultModal: () => {
@@ -456,7 +658,7 @@
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">Syncing with node...</td></tr>';
                 
                 try {
-                    const res = await fetch("http://localhost:8080/api/local/ledger");
+                    const res = await app.apiFetch("/api/local/ledger");
                     if (!res.ok) throw new Error("Network error");
                     const data = await res.json();
                     
@@ -512,10 +714,9 @@
 
                 const formData = new FormData();
                 formData.append("file", file);
-                formData.append("authorId", app.AUTHOR_ID);
 
                 try {
-                    const response = await fetch("http://localhost:8080/api/local/process", { 
+                    const response = await app.apiFetch("/api/local/process", { 
                         method: "POST", body: formData 
                     });
                     
@@ -562,7 +763,9 @@
         window.onclick = function(event) {
             const modal = document.getElementById('assetModal');
             if (event.target === modal) app.closeVaultModal();
-        }
+        };
+
+        app.initAuth();
     </script>
 </body>
 </html>

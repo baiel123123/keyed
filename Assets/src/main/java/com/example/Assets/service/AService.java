@@ -33,9 +33,30 @@ public class AService {
     private static final Set<String> IMAGE_EXTENSIONS = Set.of(
             ".png", ".jpg", ".jpeg", ".bmp", ".webp");
 
+    /** Directory containing phash_engine.py and watermark_engine.py */
+    private final String pythonScriptsDir = resolvePythonScriptsDir();
+
     @Autowired
     public AService(AssetRepository assetRepository) {
         this.assetRepository = assetRepository;
+    }
+
+    private static String resolvePythonScriptsDir() {
+        String userDir = System.getProperty("user.dir");
+        File inAssets = new File(userDir, "Assets" + File.separator + "phash_engine.py");
+        if (inAssets.isFile()) {
+            return inAssets.getParent();
+        }
+        File inCwd = new File(userDir, "phash_engine.py");
+        if (inCwd.isFile()) {
+            return userDir;
+        }
+        throw new IllegalStateException(
+                "Python engines not found. Expected Assets/phash_engine.py under: " + userDir);
+    }
+
+    private static String pythonCommand() {
+        return System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win") ? "python" : "python3";
     }
 
     // @PostConstruct triggers automatically when the server starts.
@@ -47,36 +68,39 @@ public class AService {
     }
 
     /**
-     * Fetches the entire immutable ledger from the database.
+     * Fetches ledger entries owned by the authenticated user.
      */
-    public List<Asset> getLedger() {
-        return assetRepository.findAll();
+    public List<Asset> getLedgerForAuthor(String authorId) {
+        return assetRepository.findByAuthorId(authorId);
     }
 
     /**
      * HELPER: Runs the pHash python engine to get the perceptual hash
      */
     private String generatePHash(String imagePath) throws Exception {
-        String pythonCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "python" : "python3";
-        ProcessBuilder pb = new ProcessBuilder(pythonCmd, "phash_engine.py", imagePath);
+        String scriptPath = pythonScriptsDir + File.separator + "phash_engine.py";
+        ProcessBuilder pb = new ProcessBuilder(pythonCommand(), scriptPath, imagePath);
         pb.redirectErrorStream(true);
         Process process = pb.start();
 
+        StringBuilder output = new StringBuilder();
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String line;
         String pHash = null;
 
         while ((line = reader.readLine()) != null) {
+            output.append(line).append('\n');
             if (line.startsWith("PHASH_RESULT=")) {
                 pHash = line.replace("PHASH_RESULT=", "").trim();
             } else if (line.startsWith("PHASH_ERROR=")) {
                 throw new Exception("Python pHash Engine Error: " + line);
             }
         }
-        process.waitFor();
+        int exitCode = process.waitFor();
 
         if (pHash == null) {
-            throw new Exception("Failed to extract pHash. Check python script output.");
+            throw new Exception("Failed to extract pHash (exit " + exitCode + "): "
+                    + output.toString().trim());
         }
         return pHash;
     }
@@ -116,9 +140,9 @@ public class AService {
             String protectedFileName = "KEYED_" + fileHash + "_" + originalFileName;
             Path protectedPath = Paths.get(PROTECTED_DIR, protectedFileName);
 
-            String pythonCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "python" : "python3";
+            String watermarkScript = pythonScriptsDir + File.separator + "watermark_engine.py";
             ProcessBuilder pb = new ProcessBuilder(
-                    pythonCmd, "watermark_engine.py",
+                    pythonCommand(), watermarkScript,
                     originalPath.toAbsolutePath().toString(),
                     protectedPath.toAbsolutePath().toString(),
                     authorId,
