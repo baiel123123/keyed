@@ -21,13 +21,15 @@ public class Application {
 		// Fetch the server port (defaults to 8080 if not set in application.properties)
 		String port = env.getProperty("server.port", "8080");
 		String appName = env.getProperty("spring.application.name", "KEYED Enterprise Vault");
+		String dbUrl = env.getProperty("spring.datasource.url", "unknown");
 
 		// Print a clean, readable startup banner in the terminal
 		log.info("\n----------------------------------------------------------\n\t" +
 				"Status: SUCCESS \n\t" +
 				"Application: {} \n\t" +
-				"Access URL:  http://localhost:{}\n" +
+				"Access URL:  http://localhost:{}\n\t" +
+				"Database:    {}\n" +
 				"----------------------------------------------------------",
-				appName, port);
+				appName, port, dbUrl);
 	}
 }
