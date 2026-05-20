@@ -17,5 +17,11 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // New JSX transform (React 17+) does not require React in scope
+      'react/react-in-jsx-scope': 'off',
+      // Allow unused vars that start with _ (intentional ignores)
+      'no-unused-vars': ['warn', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
+    },
   },
 ])
