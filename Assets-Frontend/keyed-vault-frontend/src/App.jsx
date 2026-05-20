@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar.jsx';
 import TopBar from './components/layout/TopBar.jsx';
@@ -24,13 +24,13 @@ export default function App() {
         <TopBar />
         <div className="view-container">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/"          element={<Dashboard />} />
             <Route path="/workspace" element={<ProtectAsset />} />
-            <Route path="/ledger" element={<Ledger />} />
-            <Route path="/network" element={<Network />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/ledger"    element={<Ledger />} />
+            <Route path="/network"   element={<Network />} />
+            <Route path="/settings"  element={<Settings />} />
+            <Route path="/profile"   element={<Profile />} />
+            <Route path="*"          element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </div>
