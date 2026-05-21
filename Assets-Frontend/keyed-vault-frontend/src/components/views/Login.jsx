@@ -1,18 +1,12 @@
 import { useState } from 'react';
-import SignUp from './SignUp.jsx';
 
 export default function Login({ onLogin }) {
-  const [view,     setView]     = useState('login'); // 'login' | 'signup'
-  const [email,    setEmail]    = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [showPw,   setShowPw]   = useState(false);
+  const [showPw, setShowPw]     = useState(false);
   const [remember, setRemember] = useState(false);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState('');
-
-  if (view === 'signup') {
-    return <SignUp onSwitch={() => setView('login')} />;
-  }
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -27,28 +21,29 @@ export default function Login({ onLogin }) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password })
       });
-
+      
       const data = await res.json();
-
+      
       if (!res.ok || !data.success) {
-        setError(data.message || 'Login failed. Please check your credentials.');
+        setError(data.message || 'Login failed');
         setLoading(false);
         return;
       }
 
-      // Store JWT based on "Remember me" preference
+      // Store the JWT based on the "Remember me" preference
+      const tokenKey = 'keyed_jwt';
       if (remember) {
-        localStorage.setItem('keyed_jwt', data.payload.token);
+        localStorage.setItem(tokenKey, data.payload.token);
       } else {
-        sessionStorage.setItem('keyed_jwt', data.payload.token);
+        sessionStorage.setItem(tokenKey, data.payload.token);
       }
 
-      // Pass full payload up to App.jsx (token, user info, etc.)
+      // Pass the payload up to the parent component to update global state
       onLogin(data.payload);
 
-    } catch {
+    } catch (err) {
       setError('Cannot reach server. Please check your connection.');
       setLoading(false);
     }
@@ -58,7 +53,6 @@ export default function Login({ onLogin }) {
     <div className="login-page">
       <div className="login-bg-glow" />
 
-      {/* Logo */}
       <div className="login-logo">
         <div className="login-logo-icon" />
         <div>
@@ -71,7 +65,6 @@ export default function Login({ onLogin }) {
         </div>
       </div>
 
-      {/* Card */}
       <div className="login-card">
         <div className="login-title">Sign in to your vault</div>
 
@@ -92,14 +85,9 @@ export default function Login({ onLogin }) {
           </div>
         )}
 
-        {/* Email */}
         <div className="input-group">
           <div className="input-label">Email Address</div>
           <div className="input-icon-wrap">
-            <svg className="input-icon-left" width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M1 5l6 4 6-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
             <input
               className="input-field"
               type="email"
@@ -112,14 +100,9 @@ export default function Login({ onLogin }) {
           </div>
         </div>
 
-        {/* Password */}
         <div className="input-group">
           <div className="input-label">Password</div>
           <div className="input-icon-wrap">
-            <svg className="input-icon-left" width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <rect x="2" y="6" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M4 6V4a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
             <input
               className="input-field"
               type={showPw ? 'text' : 'password'}
@@ -138,15 +121,13 @@ export default function Login({ onLogin }) {
             >
               {showPw ? (
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                  <path d="M1 7.5C1 7.5 3.5 3 7.5 3s6.5 4.5 6.5 4.5-2.5 4.5-6.5 4.5S1 7.5 1 7.5z"
-                    stroke="currentColor" strokeWidth="1.3"/>
+                  <path d="M1 7.5C1 7.5 3.5 3 7.5 3s6.5 4.5 6.5 4.5-2.5 4.5-6.5 4.5S1 7.5 1 7.5z" stroke="currentColor" strokeWidth="1.3"/>
                   <circle cx="7.5" cy="7.5" r="1.8" stroke="currentColor" strokeWidth="1.3"/>
                   <path d="M2 2l11 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
                 </svg>
               ) : (
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                  <path d="M1 7.5C1 7.5 3.5 3 7.5 3s6.5 4.5 6.5 4.5-2.5 4.5-6.5 4.5S1 7.5 1 7.5z"
-                    stroke="currentColor" strokeWidth="1.3"/>
+                  <path d="M1 7.5C1 7.5 3.5 3 7.5 3s6.5 4.5 6.5 4.5-2.5 4.5-6.5 4.5S1 7.5 1 7.5z" stroke="currentColor" strokeWidth="1.3"/>
                   <circle cx="7.5" cy="7.5" r="1.8" stroke="currentColor" strokeWidth="1.3"/>
                 </svg>
               )}
@@ -154,7 +135,6 @@ export default function Login({ onLogin }) {
           </div>
         </div>
 
-        {/* Remember + Forgot */}
         <div className="login-footer-row">
           <label className="remember-row">
             <input
@@ -164,10 +144,8 @@ export default function Login({ onLogin }) {
             />
             Remember me
           </label>
-          <span className="forgot-link">Forgot password?</span>
         </div>
 
-        {/* Submit */}
         <button
           className="btn btn-lg"
           onClick={handleSubmit}
@@ -183,15 +161,9 @@ export default function Login({ onLogin }) {
           {loading ? <><span className="spinner" /> Authenticating…</> : 'Access Vault'}
         </button>
 
-        {/* Switch to Sign Up */}
         <div className="login-register">
           Don&apos;t have an account?{' '}
-          <span
-            className="register-link"
-            onClick={() => { setError(''); setView('signup'); }}
-          >
-            Create account
-          </span>
+          <span className="register-link">Create account</span>
         </div>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { apiFetch, parseModelResponse } from './httpClient.js';
+
 const BASE = '/api/local';
 
 /* ── Auth token helpers ──────────────────────────────────────────── */
@@ -17,33 +19,16 @@ function authHeaders() {
 
 /* ── Ledger ──────────────────────────────────────────────────────── */
 export async function fetchLedger() {
-  const res = await fetch(`${BASE}/ledger`, {
-    headers: authHeaders(),
-  });
+  const res = await fetch(`${BASE}/ledger`);
   if (!res.ok) throw new Error(`Ledger fetch failed: ${res.status}`);
   return res.json();
 }
 
-/* ── Process / Harden asset ─────────────────────────────────────── */
 export async function processAsset(file, authorId) {
   const form = new FormData();
   form.append('file', file);
   form.append('authorId', authorId);
-
-  const token = getToken();
-  const res = await fetch(`${BASE}/process`, {
-    method: 'POST',
-    body: form,
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const res = await fetch(`${BASE}/process`, { method: 'POST', body: form });
   if (!res.ok) throw new Error(`Process failed: ${res.status}`);
   return res.json();
-}
-
-/* ── File retrieval URL (used by Ledger preview & download) ─────── */
-// Returns the URL to fetch a raw file by its SHA-256 hash.
-// Backend should respond with the file bytes + correct Content-Type header.
-// Expected endpoint: GET /api/local/file/{hash}
-export function getFileUrl(hash) {
-  return `${BASE}/file/${hash}`;
 }
