@@ -9,13 +9,44 @@ export default function Login({ onLogin }) {
   const [error, setError]       = useState('');
 
   const handleSubmit = async () => {
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    if (!email || !password) { 
+      setError('Please fill in all fields.'); 
+      return; 
+    }
+    
     setError('');
     setLoading(true);
-    // Simulate auth — swap this for a real API call when backend is ready
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    onLogin();
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      // Store the JWT based on the "Remember me" preference
+      const tokenKey = 'keyed_jwt';
+      if (remember) {
+        localStorage.setItem(tokenKey, data.payload.token);
+      } else {
+        sessionStorage.setItem(tokenKey, data.payload.token);
+      }
+
+      // Pass the payload up to the parent component to update global state
+      onLogin(data.payload);
+
+    } catch (err) {
+      setError('Cannot reach server. Please check your connection.');
+      setLoading(false);
+    }
   };
 
   return (
