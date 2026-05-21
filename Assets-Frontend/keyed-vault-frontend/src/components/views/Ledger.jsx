@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/use-memo */
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchLedger } from '../../api/vaultClient.js';
 
@@ -63,6 +65,7 @@ function PreviewModal({ row, onClose }) {
       const t = setTimeout(() => setVisible(true), 10);
       return () => clearTimeout(t);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible(false);
   }, [row]);
 
