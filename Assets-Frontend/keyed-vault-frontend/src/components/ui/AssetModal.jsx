@@ -20,7 +20,7 @@ export default function AssetModal({ asset, onClose }) {
       clearTimeout(t);
       setVisible(false);
     };
-  }, [asset]);
+  }, [asset, setVisible]);
 
   // Close on Escape key
   const handleKey = useCallback((e) => {

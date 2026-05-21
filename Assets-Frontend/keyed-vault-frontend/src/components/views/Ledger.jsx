@@ -59,7 +59,6 @@ function PreviewModal({ row, onClose }) {
   // FIX 2: restructured so setVisible(false) is clearly in the early-return branch
   useEffect(() => {
     if (!row) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(false);
       return;
     }
@@ -82,7 +81,6 @@ function PreviewModal({ row, onClose }) {
     const controller = new AbortController();
     const fetchUrl   = fileUrl(row.fileHash);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTextLoading(true);
     setTextContent(null);
     setTextError(null);

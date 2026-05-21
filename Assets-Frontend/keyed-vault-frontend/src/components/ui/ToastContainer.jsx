@@ -104,14 +104,14 @@ export function ToastProvider({ children }) {
     clearTimeout(timerRef.current[id]);
     delete timerRef.current[id];
     setToasts(prev => prev.filter(t => t.id !== id));
-  }, []);
+  }, [setToasts]);
 
   const push = useCallback((type, message, duration = 3500) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setToasts(prev => [...prev, { id, type, message }]);
     timerRef.current[id] = setTimeout(() => dismiss(id), duration);
     return id;
-  }, [dismiss]);
+  }, [dismiss, setToasts]);
 
   const api = {
     success: (msg, ms) => push('success', msg, ms),

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function Settings() {
   const [notifications, setNotifications] = useState({ asset: true, ledger: true, threat: true, node: false });
