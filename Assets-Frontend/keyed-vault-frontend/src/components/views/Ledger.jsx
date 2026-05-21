@@ -22,15 +22,6 @@ function fileIcon(name = '') {
   return '📁';
 }
 
-const DEMO_ROWS = [
-  { fileHash: '3a7f9c2e8b4d1f6a0e5c3b9d7f2a8c4e', originalFileName: 'Q4_Annual_Report.pdf',       authorId: 'USR-0xA3F7C2', protectedAt: '2026-05-19T14:32:11', block: '#00842' },
-  { fileHash: '1b5e8d3f7a2c9e4b6d0f3a8c5e9b2d7f', originalFileName: 'contract_v3_signed.docx',    authorId: 'USR-0xA3F7C2', protectedAt: '2026-05-19T12:11:04', block: '#00841' },
-  { fileHash: '7c9f3a2e5b8d1f4c0e6a3b9d2f5e8a1c', originalFileName: 'NDA_Project_Phoenix.pdf',     authorId: 'USR-0xB1E9D4', protectedAt: '2026-05-18T09:55:23', block: '#00840' },
-  { fileHash: '0e4a8c3f7b2d5e9a1c6f3b0d8e2a5c9f', originalFileName: 'source_code_v1.2.zip',        authorId: 'USR-0xA3F7C2', protectedAt: '2026-05-17T17:22:48', block: '#00839' },
-  { fileHash: '6d2f9b4e8c1a5f3d0e7b2c9a4f6d1e8b', originalFileName: 'logo_brand_assets.zip',       authorId: 'USR-0xC5A7B3', protectedAt: '2026-05-16T11:04:37', block: '#00838' },
-  { fileHash: '2a8e5c1f9b3d6a0e4c7f2b5d8a1e6c3f', originalFileName: 'presentation_deck_v4.pptx',   authorId: 'USR-0xA3F7C2', protectedAt: '2026-05-15T08:47:12', block: '#00837' },
-];
-
 export default function Ledger() {
   const [rows,     setRows]     = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -47,13 +38,15 @@ export default function Ledger() {
       const data = await fetchLedger();
       const enriched = data.map((r, i) => ({
         ...r,
+        fileHash: r.assetHash || r.fileHash,
         block: r.block || `#${String(900 - i).padStart(5, '0')}`,
       }));
       setRows(enriched);
-    } catch {
-      // Backend not running — fall back to demo data so the UI is always usable
-      setRows(DEMO_ROWS);
-      setError('Backend offline — showing demo data');
+    } catch (err) {
+      setRows([]);
+      setError(err.message === 'Unauthorized'
+        ? 'Session expired — sign in again'
+        : 'Cannot reach backend — is Assets running on :8080?');
     } finally {
       setLoading(false);
     }
@@ -78,7 +71,7 @@ export default function Ledger() {
     const q = query.toLowerCase().trim();
     if (!q) return rows;
     return rows.filter(r =>
-      r.fileHash?.toLowerCase().includes(q) ||
+      (r.fileHash || r.assetHash)?.toLowerCase().includes(q) ||
       r.originalFileName?.toLowerCase().includes(q) ||
       r.authorId?.toLowerCase().includes(q)
     );
