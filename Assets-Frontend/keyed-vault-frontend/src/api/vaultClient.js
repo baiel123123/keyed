@@ -47,3 +47,30 @@ export async function processAsset(file, authorId) {
 export function getFileUrl(hash) {
   return `${BASE}/file/${hash}`;
 }
+/* ── Authentication ──────────────────────────────────────────────── */
+
+export async function login(email, password) {
+  const res = await fetch('/api/auth/login', { 
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || `Login failed: ${res.status}`);
+  }
+  
+  return res.json();
+}
+
+export async function fetchProfile() {
+  const res = await fetch('/api/auth/profile', { // Убедитесь, что у вас именно такой URL для профиля
+    headers: authHeaders(),
+  });
+  
+  if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
+  return res.json();
+}

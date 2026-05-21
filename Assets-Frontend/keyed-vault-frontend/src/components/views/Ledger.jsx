@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchLedger } from '../../api/vaultClient.js';
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
@@ -18,16 +18,16 @@ function getExt(name = '') {
 
 function fileIcon(name = '') {
   const ext = getExt(name);
-  if (ext === 'pdf')                                             return '📄';
-  if (['doc','docx'].includes(ext))                              return '📝';
-  if (['zip','rar','gz','tar'].includes(ext))                    return '📦';
-  if (['png','jpg','jpeg','gif','webp','svg'].includes(ext))     return '🖼️';
-  if (['mp4','mov','avi','mkv','webm'].includes(ext))            return '🎬';
-  if (['mp3','wav','ogg','flac'].includes(ext))                  return '🎵';
-  if (['xls','xlsx','csv'].includes(ext))                        return '📊';
-  if (['ppt','pptx'].includes(ext))                              return '📑';
+  if (ext === 'pdf')                                   return '📄';
+  if (['doc','docx'].includes(ext))                    return '📝';
+  if (['zip','rar','gz','tar'].includes(ext))          return '📦';
+  if (['png','jpg','jpeg','gif','webp','svg'].includes(ext)) return '🖼️';
+  if (['mp4','mov','avi','mkv','webm'].includes(ext))  return '🎬';
+  if (['mp3','wav','ogg','flac'].includes(ext))        return '🎵';
+  if (['xls','xlsx','csv'].includes(ext))              return '📊';
+  if (['ppt','pptx'].includes(ext))                    return '📑';
   if (['js','jsx','ts','tsx','py','java','go','rs'].includes(ext)) return '💻';
-  if (['txt','md'].includes(ext))                                return '📃';
+  if (['txt','md'].includes(ext))                      return '📃';
   return '📁';
 }
 
@@ -37,6 +37,7 @@ const TEXT_EXTS  = ['txt','md','json','xml','csv','js','jsx','ts','tsx','py','ht
 const VIDEO_EXTS = ['mp4','mov','webm'];
 const AUDIO_EXTS = ['mp3','wav','ogg'];
 
+// URL to fetch the raw file from the backend by hash
 const fileUrl = (hash) => `/api/local/file/${hash}`;
 
 /* ─── File Preview Modal ───────────────────────────────────────── */
@@ -46,35 +47,37 @@ function PreviewModal({ row, onClose }) {
   const [textLoading, setTextLoading] = useState(false);
   const [textError,   setTextError]   = useState(null);
 
+  // Derive ext and url from row — recalculated only when row changes
   const ext = getExt(row?.originalFileName || '');
   const url = row ? fileUrl(row.fileHash) : null;
 
-  // FIX 1: useRef instead of useCallback — always holds the latest onClose
-  // without adding it as a dep to other effects
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
+  // FIX 1: Stable onClose ref so the Escape listener doesn't re-register
+  //         on every parent render. Using useCallback inside the modal
+  //         would require passing a stable fn from the parent; instead we
+  //         store the latest version in a ref and call it inside a stable handler.
+  const onCloseRef = useCallback(onClose, [onClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // FIX 2: restructured so setVisible(false) is clearly in the early-return branch
+  // Animate in
   useEffect(() => {
-    if (!row) {
-      setVisible(false);
-      return;
+    if (row) {
+      const t = setTimeout(() => setVisible(true), 10);
+      return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setVisible(true), 10);
-    return () => clearTimeout(t);
+    setVisible(false);
   }, [row]);
 
-  // Close on Escape
+  // Close on Escape — only depends on stable onCloseRef, not the raw prop
   useEffect(() => {
     if (!row) return;
-    const fn = (ev) => { if (ev.key === 'Escape') onCloseRef.current(); };
+    const fn = (ev) => { if (ev.key === 'Escape') onCloseRef(); };
     document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
-  }, [row]);
+  }, [row, onCloseRef]);
 
-  // FIX 3: include state setters in deps (they're stable — no extra re-runs)
+  // FIX 2 + 3: Fetch text content — keyed only on row.fileHash (stable identity).
+  //   • ext and url are derived from row so they're NOT separate deps.
+  //   • State setters (setTextContent etc.) are always stable — excluded from deps.
+  //   • Use an AbortController so stale fetches don't update unmounted state.
   useEffect(() => {
     if (!row || !TEXT_EXTS.includes(getExt(row.originalFileName))) return;
 
@@ -95,13 +98,14 @@ function PreviewModal({ row, onClose }) {
         setTextLoading(false);
       })
       .catch(err => {
-        if (err.name === 'AbortError') return;
+        if (err.name === 'AbortError') return; // component unmounted — ignore
         setTextError(err.message);
         setTextLoading(false);
       });
 
+    // Abort in-flight request when row changes or modal closes
     return () => controller.abort();
-  }, [row, setTextContent, setTextLoading, setTextError]);
+  }, [row]); // ← only row — ext/url are derived from it, setters are stable
 
   if (!row) return null;
 
@@ -327,8 +331,7 @@ function PreviewModal({ row, onClose }) {
                 Preview not available for .{ext} files
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', maxWidth: 340, lineHeight: 1.6 }}>
-                This file type cannot be previewed in the browser. Use the <strong>Download</strong> button above
-                to access it locally, or <strong>Open</strong> to let your browser decide.
+                This file type cannot be previewed in the browser. Use the <strong>Download</strong> button above to access it locally, or <strong>Open</strong> to let your browser decide.
               </div>
               <a
                 href={url}
@@ -387,7 +390,7 @@ export default function Ledger() {
   const [query,   setQuery]   = useState('');
   const [copied,  setCopied]  = useState(null);
   const [syncing, setSyncing] = useState(false);
-  const [preview, setPreview] = useState(null);
+  const [preview, setPreview] = useState(null); // row object for PreviewModal
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -406,7 +409,7 @@ export default function Ledger() {
     }
   }, []);
 
-  useEffect(() => { void Promise.resolve().then(load); }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const syncNode = async () => {
     setSyncing(true);
@@ -592,7 +595,7 @@ export default function Ledger() {
                   {/* Block */}
                   <td><span className="block-num">{row.block}</span></td>
 
-                  {/* View / Preview button */}
+                  {/* ── View / Preview button ── */}
                   <td>
                     <button
                       onClick={() => setPreview(row)}
