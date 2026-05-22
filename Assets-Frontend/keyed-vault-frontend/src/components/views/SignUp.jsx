@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext.jsx';
+import LogoIcon from '../ui/LogoIcon.jsx';
 
 // ── Validation helpers ────────────────────────────────────────────
 const validate = (fields) => {
@@ -120,6 +122,7 @@ function GenderOption({ value, label, icon, selected, onSelect }) {
 
 // ── Main Component ────────────────────────────────────────────────
 export default function SignUp({ onSwitch }) {
+  const { login } = useAuth();
   const [fields, setFields] = useState({
     fullName: '', username: '', email: '',
     phone: '', password: '', confirm: '', gender: '',
@@ -157,11 +160,16 @@ export default function SignUp({ onSwitch }) {
         }),
       });
 
+      // Backend not started yet
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        setErrors(prev => ({ ...prev, _global: 'Server unavailable. Make sure Spring Boot is running on port 8080.' }));
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        // Surface field-level errors returned by the backend, e.g.
-        // { success: false, errors: { email: "Already taken" } }
         if (data.errors) {
           setErrors(prev => ({ ...prev, ...data.errors }));
         } else {
@@ -171,7 +179,13 @@ export default function SignUp({ onSwitch }) {
         return;
       }
 
-      // Success — show confirmation screen then redirect to login
+      // If backend returns a token on register, log in immediately
+      if (data.payload?.token) {
+        login(data.payload, false);
+        return; // App.jsx will redirect automatically via isAuthenticated
+      }
+
+      // Otherwise show success and redirect to login
       setLoading(false);
       setSuccess(true);
       setTimeout(() => onSwitch(), 2200);
@@ -216,12 +230,12 @@ export default function SignUp({ onSwitch }) {
 
   // ── Form ──────────────────────────────────────────────────────
   return (
-    <div className="login-page" style={{ padding: '32px 24px' }}>
+    <div className="login-page">
       <div className="login-bg-glow" />
 
       {/* Logo */}
-      <div className="login-logo" style={{ marginBottom: 24 }}>
-        <div className="login-logo-icon" />
+      <div className="login-logo" style={{ marginBottom: 16 }}>
+        <LogoIcon size={48} radius="14px" />
         <div>
           <div className="login-logo-title">
             <span className="keyed">KEYED</span>
@@ -233,8 +247,8 @@ export default function SignUp({ onSwitch }) {
       </div>
 
       {/* Card */}
-      <div className="login-card" style={{ maxWidth: 520 }}>
-        <div className="login-title">Create your account</div>
+      <div className="login-card" style={{ maxWidth: 540, padding: '24px 28px' }}>
+        <div className="login-title" style={{ fontSize: 18, marginBottom: 4 }}>Create your account</div>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 24, marginTop: -12 }}>
           All fields are required to register your vault identity.
         </p>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 export default function GlobalNetwork() {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);

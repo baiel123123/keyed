@@ -2,47 +2,64 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const TITLES = {
-  '/': 'Dashboard',
+  '/':          'Dashboard',
   '/workspace': 'Protect Asset',
-  '/ledger': 'Immutable Ledger',
-  '/network': 'Global Network',
-  '/settings': 'Vault Configuration',
-  '/profile': 'My Profile',
+  '/ledger':    'Immutable Ledger',
+  '/network':   'Global Network',
+  '/settings':  'Vault Configuration',
+  '/profile':   'My Profile',
 };
+
+// Derive initials from a full name string, e.g. "John Doe" → "JD"
+function initials(name) {
+  if (!name) return 'JD';
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('');
+}
 
 export default function TopBar() {
   const { pathname } = useLocation();
-  const { profile, logout } = useAuth();
-  const pageTitle = TITLES[pathname] ?? 'Enterprise Vault';
+  const { user }     = useAuth();               // safe — AuthProvider is above
 
-  const initials = (profile?.displayName || profile?.email || 'U')
-    .split(/\s+/)
-    .map(s => s[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const pageTitle    = TITLES[pathname] ?? 'Enterprise Vault';
+  const displayName  = user?.fullName ?? user?.username ?? 'John Doe';
+  const avatarText   = initials(displayName);
 
   return (
     <header className="topbar">
+      {/* Current page breadcrumb */}
       <span style={{
-        position: 'absolute',
-        left: '28px',
-        fontSize: '10px',
-        fontWeight: 600,
+        position: 'absolute', left: '28px',
+        fontSize: '10px', fontWeight: 600,
+        letterSpacing: '0.04em', textTransform: 'uppercase',
         color: 'var(--text-muted)',
-        letterSpacing: '0.04em',
-        textTransform: 'uppercase',
       }}>
         {pageTitle}
       </span>
 
-      <div className="topbar-user" style={{ marginLeft: 'auto', gap: 12, display: 'flex', alignItems: 'center' }}>
-        <span className="mono-muted" style={{ fontSize: 11 }}>{profile?.authorId}</span>
-        <div className="user-avatar">{initials}</div>
-        <span className="user-name">{profile?.displayName || profile?.email}</span>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
-          Logout
-        </button>
+      {/* Notification bell */}
+      <div className="topbar-notification">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path
+            d="M9 2a5.5 5.5 0 0 1 5.5 5.5c0 2.5.8 3.8 1.5 4.5H2c.7-.7 1.5-2 1.5-4.5A5.5 5.5 0 0 1 9 2z"
+            stroke="currentColor" strokeWidth="1.4"
+          />
+          <path
+            d="M7 14.5a2 2 0 0 0 4 0"
+            stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"
+          />
+        </svg>
+        <span className="notif-dot" />
+      </div>
+
+      {/* User chip — shows real name from auth context */}
+      <div className="topbar-user">
+        <div className="user-avatar">{avatarText}</div>
+        <span className="user-name">{displayName}</span>
       </div>
     </header>
   );

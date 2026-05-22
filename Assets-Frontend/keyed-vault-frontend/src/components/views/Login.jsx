@@ -1,25 +1,24 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext.jsx';
+import LogoIcon from '../ui/LogoIcon.jsx';
 import SignUp from './SignUp.jsx';
 
-export default function Login({ onLogin }) {
-  const [view,     setView]     = useState('login'); // 'login' | 'signup'
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw,   setShowPw]   = useState(false);
-  const [remember, setRemember] = useState(false);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState('');
+export default function Login() {
+  const { login }   = useAuth();
+  const [view,      setView]     = useState('login');
+  const [email,     setEmail]    = useState('');
+  const [password,  setPassword] = useState('');
+  const [showPw,    setShowPw]   = useState(false);
+  const [remember,  setRemember] = useState(false);
+  const [loading,   setLoading]  = useState(false);
+  const [error,     setError]    = useState('');
 
   if (view === 'signup') {
     return <SignUp onSwitch={() => setView('login')} />;
   }
 
   const handleSubmit = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields.');
-      return;
-    }
-
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
     setError('');
     setLoading(true);
 
@@ -30,26 +29,27 @@ export default function Login({ onLogin }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        setError(data.message || 'Login failed. Please check your credentials.');
+      // 502 = backend is down (Spring Boot not started yet)
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        setError('Server is unavailable. Please check that the backend is running on port 8080.');
         setLoading(false);
         return;
       }
 
-      // Store JWT based on "Remember me" preference
-      if (remember) {
-        localStorage.setItem('keyed_jwt', data.payload.token);
-      } else {
-        sessionStorage.setItem('keyed_jwt', data.payload.token);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Invalid credentials. Please try again.');
+        setLoading(false);
+        return;
       }
 
-      // Pass full payload up to App.jsx (token, user info, etc.)
-      onLogin(data.payload);
+      // Pass payload + remember preference to AuthContext
+      login(data.payload, remember);
+      // App.jsx reads isAuthenticated from context — no need to do anything else
 
     } catch {
-      setError('Cannot reach server. Please check your connection.');
+      setError('Cannot reach server. Make sure Spring Boot is running on port 8080.');
       setLoading(false);
     }
   };
@@ -60,7 +60,7 @@ export default function Login({ onLogin }) {
 
       {/* Logo */}
       <div className="login-logo">
-        <div className="login-logo-icon" />
+        <LogoIcon size={72} radius="20px" />
         <div>
           <div className="login-logo-title">
             <span className="keyed">KEYED</span>
@@ -75,7 +75,6 @@ export default function Login({ onLogin }) {
       <div className="login-card">
         <div className="login-title">Sign in to your vault</div>
 
-        {/* Error banner */}
         {error && (
           <div style={{
             background: 'var(--red-bg)', border: '1px solid rgba(239,68,68,0.3)',
@@ -157,11 +156,7 @@ export default function Login({ onLogin }) {
         {/* Remember + Forgot */}
         <div className="login-footer-row">
           <label className="remember-row">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={e => setRemember(e.target.checked)}
-            />
+            <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
             Remember me
           </label>
           <span className="forgot-link">Forgot password?</span>
@@ -183,13 +178,9 @@ export default function Login({ onLogin }) {
           {loading ? <><span className="spinner" /> Authenticating…</> : 'Access Vault'}
         </button>
 
-        {/* Switch to Sign Up */}
         <div className="login-register">
           Don&apos;t have an account?{' '}
-          <span
-            className="register-link"
-            onClick={() => { setError(''); setView('signup'); }}
-          >
+          <span className="register-link" onClick={() => { setError(''); setView('signup'); }}>
             Create account
           </span>
         </div>

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import LogoIcon from '../ui/LogoIcon.jsx';
 
 const NAV_PRIMARY = [
   {
@@ -78,14 +79,15 @@ const ArrowIcon = () => (
   </svg>
 );
 
-export default function Sidebar() {
+export default function Sidebar({ onSignOut }) {
   // Sign-out reloads the page which resets React state → returns to Login screen
-  const handleSignOut = () => window.location.reload();
+  // Use prop from App.jsx which calls AuthContext.logout()
+  const handleSignOut = () => { if (onSignOut) onSignOut(); };
 
   return (
     <aside className="sidebar">
       <NavLink to="/" className="sidebar-logo" style={{ textDecoration: 'none' }}>
-        <div className="logo-icon" />
+        <LogoIcon size={30} />
         <div className="logo-text">
           <span className="logo-title">KEYED</span>
           <span className="logo-sub">Enterprise Vault</span>

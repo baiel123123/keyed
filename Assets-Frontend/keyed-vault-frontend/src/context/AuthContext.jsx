@@ -1,65 +1,72 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getToken, setToken, clearToken } from '../api/httpClient.js';
-import { fetchProfile, login as apiLogin } from '../api/vaultClient.js';
+import { createContext, useContext, useState, useCallback} from 'react';
 
+/* ─── Context ──────────────────────────────────────────────────── */
 const AuthContext = createContext(null);
 
+/* ─── Provider ─────────────────────────────────────────────────── */
 export function AuthProvider({ children }) {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Rehydrate from storage on first load (handles "Remember me")
+  const [token, setToken] = useState(
+    () => localStorage.getItem('keyed_jwt')
+      || sessionStorage.getItem('keyed_jwt')
+      || null
+  );
 
-  const applySession = useCallback((payload) => {
-    setProfile({
-      email: payload.email,
-      displayName: payload.displayName,
-      authorId: payload.authorId,
-    });
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem('keyed_user')
+               || sessionStorage.getItem('keyed_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Called by Login.jsx with the full backend payload
+  // payload = { token: "...", user: { fullName, email, username, ... } }
+  // remember = true  → localStorage  (persists across browser restarts)
+  // remember = false → sessionStorage (cleared when tab closes)
+  const login = useCallback((payload, remember = false) => {
+    const t = payload?.token ?? null;
+    const u = payload?.user  ?? null;
+
+    const storage = remember ? localStorage : sessionStorage;
+    if (t) storage.setItem('keyed_jwt',  t);
+    if (u) storage.setItem('keyed_user', JSON.stringify(u));
+
+    setToken(t);
+    setUser(u);
   }, []);
 
   const logout = useCallback(() => {
-    clearToken();
-    setProfile(null);
+    localStorage.removeItem('keyed_jwt');
+    localStorage.removeItem('keyed_user');
+    sessionStorage.removeItem('keyed_jwt');
+    sessionStorage.removeItem('keyed_user');
+    setToken(null);
+    setUser(null);
   }, []);
 
-  const login = useCallback(async (email, password, remember = false) => {
-    const data = await apiLogin(email, password);
-    setToken(data.payload.token, remember);
-    applySession(data.payload);
-    return data.payload;
-  }, [applySession]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!getToken()) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const me = await fetchProfile();
-        if (!cancelled && me) {
-          applySession(me);
-        } else if (!cancelled) {
-          clearToken();
-        }
-      } catch {
-        if (!cancelled) clearToken();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [applySession]);
+  const value = {
+    user,
+    token,
+    isAuthenticated: !!token,
+    login,
+    logout,
+  };
 
   return (
-    <AuthContext.Provider value={{ profile, loading, login, logout, applySession }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+/* ─── Hook ─────────────────────────────────────────────────────── */
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) {
+    throw new Error('useAuth must be used within <AuthProvider>. Wrap your app in AuthProvider.');
+  }
   return ctx;
 }
