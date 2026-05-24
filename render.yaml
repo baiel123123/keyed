@@ -14,11 +14,17 @@ services:
       - key: PORT
         value: "10000"
 
-      # Render сам возьмет точный рабочий внутренний URL базы и подставит сюда
-      - key: SPRING_DATASOURCE_URL
+      # Передаем чистый хост базы внутри сети Render (например: dpg-xxx-a)
+      - key: DB_HOST
         fromDatabase:
           name: keyed-db
-          property: connectionString
+          property: host
+
+      # Передаем имя базы данных
+      - key: DB_NAME
+        fromDatabase:
+          name: keyed-db
+          property: database
 
       - key: SPRING_DATASOURCE_USERNAME
         value: keyed_admin
