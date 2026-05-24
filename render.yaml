@@ -1,0 +1,45 @@
+databases:
+  - name: keyed-db
+    databaseName: keyed
+    user: keyed_admin
+    plan: free # База создается бесплатно внутри Blueprint!
+
+services:
+  - type: web
+    name: keyed-backend
+    env: docker
+    plan: free
+    rootDir: Assets
+    envVars:
+      # Фиксируем порт, чтобы Render не запутался
+      - key: PORT
+        value: "10000"
+
+      # Передаем чистый JDBC URL, используя внутреннее имя хоста базы
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://keyed-db:5432/keyed
+
+      - key: SPRING_DATASOURCE_USERNAME
+        value: keyed_admin
+
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: keyed-db
+          property: password
+
+      # Дублируем для совместимости
+      - key: POSTGRES_DB
+        value: keyed
+      - key: POSTGRES_USER
+        value: keyed_admin
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: keyed-db
+          property: password
+      - key: POSTGRES_PORT
+        value: "5432"
+
+      - key: JWT_SECRET
+        value: KeyedVaultDevSecretChangeMeInProduction32Chars
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
