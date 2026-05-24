@@ -11,7 +11,10 @@ services:
     plan: free
     rootDir: Assets
     envVars:
-      # ВАЖНО: Передаем сгенерированные Render данные прямо в стандартные переменные Spring
+      # Указываем Render, какой порт слушать внутри контейнера
+      - key: PORT
+        value: "8080"
+
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: keyed-db
@@ -22,8 +25,6 @@ services:
         fromDatabase:
           name: keyed-db
           property: password
-
-      # Сохраняем твои старые переменные на случай, если они используются в коде
       - key: POSTGRES_DB
         value: keyed
       - key: POSTGRES_USER
