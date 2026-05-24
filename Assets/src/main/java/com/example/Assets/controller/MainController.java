@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@CrossOrigin(origins = "https://keyed-fxn2ia7mb-baiel123123s-projects.vercel.app/")
 @RestController
 @RequestMapping("/api/local")
 public class MainController {

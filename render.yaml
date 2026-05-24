@@ -1,0 +1,35 @@
+services:
+  - type: database
+    name: keyed-db
+    databaseName: keyed
+    user: postgres
+    plan: free
+
+  - type: web
+    name: keyed-backend
+    env: docker
+    plan: free
+    rootDir: Assets
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://keyed-db:5432/keyed
+      - key: SPRING_DATASOURCE_USERNAME
+        value: postgres
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: keyed-db
+          property: password
+      - key: POSTGRES_DB
+        value: keyed
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: keyed-db
+          property: password
+      - key: POSTGRES_PORT
+        value: "5432"
+      - key: JWT_SECRET
+        value: KeyedVaultDevSecretChangeMeInProduction32Chars
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
