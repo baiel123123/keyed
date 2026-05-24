@@ -16,8 +16,8 @@ WORKDIR /app
 # Копируем собранный jar-файл из предыдущего этапа
 COPY --from=build /app/target/*.jar app.jar
 
-# Spring Boot по умолчанию слушает порт 8080
+# Явно открываем порт 8080 для сети контейнеров
 EXPOSE 8080
 
-# Команда для запуска приложения
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Жестко указываем порт Спрингу при старте Java-машины
+ENTRYPOINT ["java", "-Dserver.port=8080", "-jar", "app.jar"]
