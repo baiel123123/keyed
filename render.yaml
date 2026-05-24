@@ -2,7 +2,7 @@ databases:
   - name: keyed-db
     databaseName: keyed
     user: keyed_admin
-    plan: free # База создается бесплатно внутри Blueprint!
+    plan: free
 
 services:
   - type: web
@@ -11,13 +11,14 @@ services:
     plan: free
     rootDir: Assets
     envVars:
-      # Фиксируем порт, чтобы Render не запутался
       - key: PORT
         value: "10000"
 
-      # Передаем чистый JDBC URL, используя внутреннее имя хоста базы
+      # Render сам возьмет точный рабочий внутренний URL базы и подставит сюда
       - key: SPRING_DATASOURCE_URL
-        value: jdbc:postgresql://keyed-db:5432/keyed
+        fromDatabase:
+          name: keyed-db
+          property: connectionString
 
       - key: SPRING_DATASOURCE_USERNAME
         value: keyed_admin
@@ -26,18 +27,6 @@ services:
         fromDatabase:
           name: keyed-db
           property: password
-
-      # Дублируем для совместимости
-      - key: POSTGRES_DB
-        value: keyed
-      - key: POSTGRES_USER
-        value: keyed_admin
-      - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: keyed-db
-          property: password
-      - key: POSTGRES_PORT
-        value: "5432"
 
       - key: JWT_SECRET
         value: KeyedVaultDevSecretChangeMeInProduction32Chars
