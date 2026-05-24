@@ -2,7 +2,7 @@
 databases:
   - name: keyed-db
     databaseName: keyed
-    user: postgres
+    user: keyed_admin # Изменили с postgres на безопасное имя
     plan: free
 
 # 2. Отдельная секция для веб-сервисов (твоего Spring Boot)
@@ -16,7 +16,7 @@ services:
       - key: SPRING_DATASOURCE_URL
         value: jdbc:postgresql://keyed-db:5432/keyed
       - key: SPRING_DATASOURCE_USERNAME
-        value: postgres
+        value: keyed_admin # Передаем новое имя пользователя в Spring Boot
       - key: SPRING_DATASOURCE_PASSWORD
         fromDatabase:
           name: keyed-db
@@ -24,7 +24,7 @@ services:
       - key: POSTGRES_DB
         value: keyed
       - key: POSTGRES_USER
-        value: postgres
+        value: keyed_admin # Обновляем переменную для докера
       - key: POSTGRES_PASSWORD
         fromDatabase:
           name: keyed-db
