@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import LogoIcon from '../ui/LogoIcon.jsx';
+import LogoIcon from '../ui/Logoicon.jsx';
 
 const NAV_PRIMARY = [
   {
