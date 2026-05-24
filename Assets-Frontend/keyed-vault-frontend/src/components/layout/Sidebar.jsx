@@ -1,6 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import LogoIcon from '../ui/LogoIcon.jsx';
 
+// qwe
+
 const NAV_PRIMARY = [
   {
     to: '/',
