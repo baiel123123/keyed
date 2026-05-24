@@ -1,11 +1,12 @@
-services:
-  # Изменили тип с database на postgres
-  - type: postgres
-    name: keyed-db
+# 1. Отдельная секция для баз данных
+databases:
+  - name: keyed-db
     databaseName: keyed
     user: postgres
     plan: free
 
+# 2. Отдельная секция для веб-сервисов (твоего Spring Boot)
+services:
   - type: web
     name: keyed-backend
     env: docker
