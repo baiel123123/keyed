@@ -1,5 +1,6 @@
 services:
-  - type: database
+  # Изменили тип с database на postgres
+  - type: postgres
     name: keyed-db
     databaseName: keyed
     user: postgres
