@@ -20,11 +20,12 @@ COPY phash_engine.py .
 COPY watermark_engine.py .
 COPY req.txt .
 
-# ИСПРАВЛЕНИЕ: Создаем папку Assets внутри /app и копируем ТУДА ОБА скрипта
+# Создаем структуру папок для Java
 RUN mkdir -p Assets && cp phash_engine.py Assets/ && cp watermark_engine.py Assets/
 
-# Устанавливаем Python-зависимости
-RUN pip3 install --no-cache-dir -r req.txt
+# ИСПРАВЛЕНИЕ: Сначала принудительно ставим нужные пакеты глобально, а затем доставляем из файла
+RUN pip3 install --no-cache-dir --break-system-packages opencv-python-headless numpy && \
+    if [ -s req.txt ]; then pip3 install --no-cache-dir --break-system-packages -r req.txt; fi
 
 EXPOSE 10000
 
