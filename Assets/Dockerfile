@@ -15,13 +15,13 @@ RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/
 # Копируем jar-ник из этапа сборки
 COPY --from=build /app/target/*.jar app.jar
 
-# Копируем скрипты и зависимости (они теперь в корне контекста сборки)
+# Копируем скрипты и зависимости в корень рабочей директории контейнера (/app)
 COPY phash_engine.py .
 COPY watermark_engine.py .
 COPY req.txt .
 
-# Создаем дублирующую папку Assets/ внутри /app, чтобы удовлетворить проверку в Java (AService)
-RUN mkdir -p Assets && cp phash_engine.py Assets/
+# ИСПРАВЛЕНИЕ: Создаем папку Assets внутри /app и копируем ТУДА ОБА скрипта
+RUN mkdir -p Assets && cp phash_engine.py Assets/ && cp watermark_engine.py Assets/
 
 # Устанавливаем Python-зависимости
 RUN pip3 install --no-cache-dir -r req.txt
