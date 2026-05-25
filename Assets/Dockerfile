@@ -21,6 +21,9 @@ COPY --from=build /app/target/*.jar app.jar
 # ... (твоя верхняя часть Dockerfile остается без изменений) ...
 
 # Копируем скрипты и зависимости
+# ... (твоя верхняя часть Dockerfile остается без изменений) ...
+
+# Копируем скрипты и зависимости
 COPY phash_engine.py .
 COPY watermark_engine.py .
 COPY req.txt .
@@ -28,22 +31,18 @@ COPY req.txt .
 # Создаем структуру папок для Java
 RUN mkdir -p Assets && cp phash_engine.py Assets/ && cp watermark_engine.py Assets/
 
-# ── НОВЫЙ БЛОК: Настройка виртуального окружения ──
+# ── БРОНЕБОЙНОЕ РЕШЕНИЕ ──
+# Ставим библиотеки напрямую через пакетный менеджер Ubuntu
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-opencv \
+    python3-numpy \
+    && rm -rf /var/lib/apt/lists/*
 
-# 1. Доустанавливаем пакет venv (на всякий случай, если его нет в базовом образе)
-RUN apt-get update && apt-get install -y python3-venv
-
-# 2. Создаем виртуальное окружение в папке /opt/venv
-RUN python3 -m venv /opt/venv
-
-# 3. Активируем его, добавляя в самое начало системного PATH
-ENV PATH="/opt/venv/bin:$PATH"
-
-# 4. Теперь команды pip и python автоматически работают внутри этого окружения!
-RUN pip install --no-cache-dir opencv-python-headless numpy && \
-    if [ -s req.txt ]; then pip install --no-cache-dir -r req.txt; fi
-
-# ──────────────────────────────────────────────────
+# Если в req.txt есть что-то еще, доставляем (уже без флагов)
+RUN if [ -s req.txt ]; then pip3 install --no-cache-dir -r req.txt; fi
+# ─────────────────────────
 
 EXPOSE 10000
 
