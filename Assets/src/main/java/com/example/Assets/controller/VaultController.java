@@ -19,7 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@CrossOrigin(origins = "https://keyed-fxn2ia7mb-baiel123123s-projects.vercel.app/")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 public class VaultController {
 

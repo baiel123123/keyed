@@ -1,4 +1,7 @@
-const BASE = '/api/local';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+
+const BASE = `${BASE_URL}/api/local`;
+const AUTH_BASE = `${BASE_URL}/api/auth`;
 
 /* ── Auth token helpers ──────────────────────────────────────────── */
 export function getToken() {
