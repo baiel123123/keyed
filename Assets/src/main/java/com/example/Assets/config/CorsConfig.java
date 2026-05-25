@@ -14,14 +14,21 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // 1. ИСПРАВЛЕНИЕ: Разрешаем любые домены (Vercel, localhost и т.д.)
+        config.setAllowedOriginPatterns(List.of("*"));
+
+        // 2. Явно разрешаем все нужные методы, включая OPTIONS для префлайт-запросов
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+
+        // 3. Разрешаем любые заголовки
         config.setAllowedHeaders(List.of("*"));
+
+        // 4. Разрешаем передачу токенов/куки
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // Применяем эти правила ко всем эндпоинтам бэкенда
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
