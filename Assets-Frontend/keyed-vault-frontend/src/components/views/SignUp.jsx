@@ -134,10 +134,10 @@ export default function SignUp({ onSwitch }) {
   const [success,   setSuccess]   = useState(false);
 
   const set = (key) => (e) =>
-    setFields(prev => ({ ...prev, [key]: e.target.value }));
+      setFields(prev => ({ ...prev, [key]: e.target.value }));
 
   const setGender = (val) =>
-    setFields(prev => ({ ...prev, gender: val }));
+      setFields(prev => ({ ...prev, gender: val }));
 
   const handleSubmit = async () => {
     const errs = validate(fields);
@@ -146,30 +146,37 @@ export default function SignUp({ onSwitch }) {
 
     setLoading(true);
 
+    // 1. Динамически получаем URL бэкенда из окружения Vercel/Vite
+    const BASE_URL = import.meta.env.VITE_API_URL || '';
+
     try {
-      const res = await fetch('/api/auth/register', {
+      // 2. Подставляем BASE_URL в fetch, чтобы запрос улетал на Render в продакшене
+      const res = await fetch(`${BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName:  fields.fullName.trim(),
-          username:  fields.username.trim(),
-          email:     fields.email.trim(),
-          phone:     fields.phone.trim(),
-          password:  fields.password,
-          gender:    fields.gender,
+          displayName: fields.fullName.trim(), // Твой бэкенд ждет displayName вместо fullName
+          username:    fields.username.trim(),
+          email:       fields.email.trim(),
+          phoneNumber: fields.phone.trim(),    // Переименовали в phoneNumber под RegisterRequest бэка
+          password:    fields.password,
+          confirmPassword: fields.confirm,     // Передаем confirmPassword для проверки в AuthService
+          gender:      fields.gender ? fields.gender.toUpperCase() : null, // Переводим в 'MALE'/'FEMALE'/'OTHER' под Java Enum
         }),
       });
 
-      // Backend not started yet
+      // Если бэкенд на Render «спит» (холодный старт бесплатного тарифа)
       if (res.status === 502 || res.status === 503 || res.status === 504) {
-        setErrors(prev => ({ ...prev, _global: 'Server unavailable. Make sure Spring Boot is running on port 8080.' }));
+        const currentBackend = BASE_URL || 'http://localhost:8080';
+        setErrors(prev => ({ ...prev, _global: `Server is spinning up. Make sure backend is active at: ${currentBackend}` }));
         setLoading(false);
         return;
       }
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
+      if (!res.ok) {
+        // Обработка ошибок валидации, если бэк вернул Map<String, String> с ошибками полей
         if (data.errors) {
           setErrors(prev => ({ ...prev, ...data.errors }));
         } else {
@@ -179,23 +186,25 @@ export default function SignUp({ onSwitch }) {
         return;
       }
 
-      // If backend returns a token on register, log in immediately
+      // Если бэк при регистрации сразу возвращает JWT-токен в обертке payload
       if (data.payload?.token) {
         login(data.payload, false);
-        return; // App.jsx will redirect automatically via isAuthenticated
+        return;
       }
 
-      // Otherwise show success and redirect to login
       setLoading(false);
       setSuccess(true);
       setTimeout(() => onSwitch(), 2200);
 
-    } catch {
-      setErrors(prev => ({ ...prev, _global: 'Cannot reach server. Please check your connection.' }));
+    } catch (err) {
+      const currentBackend = BASE_URL || 'http://localhost:8080';
+      setErrors(prev => ({ ...prev, _global: `Cannot reach server at ${currentBackend}. Please check your connection.` }));
+      console.error("Fetch fatal error:", err);
       setLoading(false);
     }
   };
 
+  // ── Остальной JSX код рендеринга формы (success state и return) остается без изменений ──
   // ── Success state ─────────────────────────────────────────────
   if (success) {
     return (
