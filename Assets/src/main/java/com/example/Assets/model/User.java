@@ -19,7 +19,7 @@ public class User {
     private String email;
 
     // НОВОЕ: Юзернейм (уникальный, для авторизации или отображения)
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(unique = true, length = 100)
     private String username;
 
     @Column(nullable = false, length = 255)
