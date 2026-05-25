@@ -37,12 +37,35 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = request.getEmail().toLowerCase().trim();
+        String username = request.getUsername().toLowerCase().trim();
+
+        // Проверяем уникальность email
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email is already registered");
         }
 
+        // Проверяем уникальность username (не забудь добавить этот метод в UserRepository)
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username is already taken");
+        }
+
+        // Проверяем совпадение паролей перед сохранением
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
         String authorId = AuthorIdGenerator.generate(request.getDisplayName(), email);
-        User user = new User(email, passwordEncoder.encode(request.getPassword()), request.getDisplayName());
+
+        // Используем обновленный конструктор User со всеми полями из формы
+        User user = new User(
+                email,
+                username,
+                passwordEncoder.encode(request.getPassword()),
+                request.getDisplayName(), // Это Full Name из формы
+                request.getPhoneNumber(),
+                request.getGender()
+        );
+
         user.setAuthorId(authorId);
         user = userRepository.save(user);
 
@@ -50,17 +73,22 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        String email = request.getEmail().toLowerCase().trim();
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, request.getPassword()));
+        String loginInput = request.getEmail().toLowerCase().trim(); // Здесь может быть как email, так и username
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        // Аутентификация через Spring Security
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginInput, request.getPassword()));
+
+        // Ищем пользователя по email ИЛИ по username
+        User user = userRepository.findByEmail(loginInput)
+                .or(() -> userRepository.findByUsername(loginInput))
+                .orElseThrow(() -> new IllegalArgumentException("User not found with identifier: " + loginInput));
 
         return buildAuthResponse(user);
     }
 
     public UserProfileResponse profile(CustomUserDetails user) {
+        // Если тебе нужно возвращать в профиле телефон и гендер, обнови конструктор UserProfileResponse
         return new UserProfileResponse(user.getUsername(), user.getDisplayName(), user.getAuthorId());
     }
 

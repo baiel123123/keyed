@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/
 COPY --from=build /app/target/*.jar app.jar
 
 # Копируем скрипты и зависимости в корень рабочей директории контейнера (/app)
+# ... (верхняя часть Dockerfile остается без изменений) ...
+
+# Копируем скрипты и зависимости
 COPY phash_engine.py .
 COPY watermark_engine.py .
 COPY req.txt .
@@ -23,9 +26,9 @@ COPY req.txt .
 # Создаем структуру папок для Java
 RUN mkdir -p Assets && cp phash_engine.py Assets/ && cp watermark_engine.py Assets/
 
-# ИСПРАВЛЕНИЕ: Сначала принудительно ставим нужные пакеты глобально, а затем доставляем из файла
-RUN pip3 install --no-cache-dir --break-system-packages opencv-python-headless numpy && \
-    if [ -s req.txt ]; then pip3 install --no-cache-dir --break-system-packages -r req.txt; fi
+# ИСПРАВЛЕНИЕ: Ставим пакеты стандартным способом без флага --break-system-packages
+RUN pip3 install --no-cache-dir opencv-python-headless numpy && \
+    if [ -s req.txt ]; then pip3 install --no-cache-dir -r req.txt; fi
 
 EXPOSE 10000
 
