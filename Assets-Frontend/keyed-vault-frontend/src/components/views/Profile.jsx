@@ -1,4 +1,4 @@
-import { useAuth } from '../../context/AuthContext.jsx';
+  import { useAuth } from '../../context/AuthContext.jsx';
 
 const RECENT = [
   { icon:'🔒', name:'Hardened asset',  sub:'Q4_Annual_Report.pdf',    time:'2 min ago'  },
