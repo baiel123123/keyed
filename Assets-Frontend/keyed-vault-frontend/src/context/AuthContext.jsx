@@ -1,37 +1,27 @@
-import { createContext, useContext, useState, useCallback} from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
-/* ─── Context ──────────────────────────────────────────────────── */
 const AuthContext = createContext(null);
 
-/* ─── Provider ─────────────────────────────────────────────────── */
 export function AuthProvider({ children }) {
-  // Rehydrate from storage on first load (handles "Remember me")
   const [token, setToken] = useState(
-    () => localStorage.getItem('keyed_jwt')
-      || sessionStorage.getItem('keyed_jwt')
-      || null
+      () => localStorage.getItem('keyed_jwt') || sessionStorage.getItem('keyed_jwt') || null
   );
 
   const [user, setUser] = useState(() => {
     try {
-      const raw = localStorage.getItem('keyed_user')
-               || sessionStorage.getItem('keyed_user');
+      const raw = localStorage.getItem('keyed_user') || sessionStorage.getItem('keyed_user');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   });
 
-  // Called by Login.jsx with the full backend payload
-  // payload = { token: "...", user: { fullName, email, username, ... } }
-  // remember = true  → localStorage  (persists across browser restarts)
-  // remember = false → sessionStorage (cleared when tab closes)
   const login = useCallback((payload, remember = false) => {
     const t = payload?.token ?? null;
-    const u = payload?.user  ?? null;
+    const u = payload?.user ?? payload ?? null; // Если нет .user — сам payload и есть user
 
     const storage = remember ? localStorage : sessionStorage;
-    if (t) storage.setItem('keyed_jwt',  t);
+    if (t) storage.setItem('keyed_jwt', t);
     if (u) storage.setItem('keyed_user', JSON.stringify(u));
 
     setToken(t);
@@ -56,13 +46,12 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
   );
 }
 
-/* ─── Hook ─────────────────────────────────────────────────────── */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {

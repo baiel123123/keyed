@@ -98,6 +98,7 @@ public class AuthService {
                 token,
                 jwtService.getExpirationMs(),
                 user.getEmail(),
+                user.getUsername(),
                 user.getDisplayName(),
                 user.getAuthorId());
     }

@@ -1,12 +1,9 @@
 const BASE_URL = import.meta.env.VITE_API_URL || '';
-
 const BASE = `${BASE_URL}/api/local`;
-const AUTH_BASE = `${BASE_URL}/api/auth`;
 
-/* ── Auth token helpers ──────────────────────────────────────────── */
 export function getToken() {
-  return localStorage.getItem('keyed_jwt')
-      || sessionStorage.getItem('keyed_jwt')
+  return sessionStorage.getItem('keyed_jwt')
+      || localStorage.getItem('keyed_jwt')
       || null;
 }
 
@@ -18,62 +15,48 @@ function authHeaders() {
   };
 }
 
-/* ── Ledger ──────────────────────────────────────────────────────── */
 export async function fetchLedger() {
-  const res = await fetch(`${BASE}/ledger`, {
-    headers: authHeaders(),
-  });
+  const res = await fetch(`${BASE}/ledger`, { headers: authHeaders() });
   if (!res.ok) throw new Error(`Ledger fetch failed: ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : (data.payload || []);
+  return list.map(r => ({ ...r, fileHash: r.fileHash || r.assetHash || '' }));
+
 }
 
-/* ── Process / Harden asset ─────────────────────────────────────── */
 export async function processAsset(file, authorId) {
   const form = new FormData();
   form.append('file', file);
   form.append('authorId', authorId);
-
   const token = getToken();
   const res = await fetch(`${BASE}/process`, {
     method: 'POST',
     body: form,
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  if (!res.ok) throw new Error(`Process failed: ${res.status}`);
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `Process failed: ${res.status}`);
+  return data;
 }
 
-/* ── File retrieval URL (used by Ledger preview & download) ─────── */
-// Returns the URL to fetch a raw file by its SHA-256 hash.
-// Backend should respond with the file bytes + correct Content-Type header.
-// Expected endpoint: GET /api/local/file/{hash}
 export function getFileUrl(hash) {
+  if (!hash || hash === 'undefined' || hash === 'null' || !hash.trim()) return null;
   return `${BASE}/file/${hash}`;
 }
-/* ── Authentication ──────────────────────────────────────────────── */
 
-export async function login(email, password) {
-  const res = await fetch('/api/auth/login', { 
+export async function login(identifier, password) {
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: identifier.trim(), password }),
   });
-  
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || `Login failed: ${res.status}`);
-  }
-  
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `Login failed: ${res.status}`);
+  return data;
 }
 
 export async function fetchProfile() {
-  const res = await fetch('/api/auth/profile', { // Убедитесь, что у вас именно такой URL для профиля
-    headers: authHeaders(),
-  });
-  
+  const res = await fetch(`${BASE_URL}/api/auth/me`, { headers: authHeaders() });
   if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
   return res.json();
 }

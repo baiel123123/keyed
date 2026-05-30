@@ -50,15 +50,14 @@ public class DatabaseConfig {
                     config.setPassword(envPass);
                 }
             } else {
-                // ИСПРАВЛЕНИЕ 1: Добавлены логин и пароль для обычных jdbc-ссылок из .env
                 config.setJdbcUrl(rawUrl);
                 config.setUsername(envUser);
                 config.setPassword(envPass);
             }
         } else {
-            // ИСПРАВЛЕНИЕ 2: Указан твой реальный локальный пароль
             config.setJdbcUrl("jdbc:postgresql://localhost:5432/keyed");
             config.setUsername("postgres");
+            config.setPassword("keyed_secure"); // ИСПРАВЛЕНО ЗДЕСЬ
             config.setPassword("12302005");
         }
 

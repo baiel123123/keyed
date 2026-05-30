@@ -10,9 +10,9 @@ import GlobalNetwork from './components/views/GlobalNetwork.jsx';
 import Settings      from './components/views/Settings.jsx';
 import Profile       from './components/views/Profile.jsx';
 import Login         from './components/views/Login.jsx';
+import AIAssistant   from './components/views/AIAssistant.jsx';
 
 export default function App() {
-  // useAuth() works here because AuthProvider wraps App in main.jsx
   const { isAuthenticated, logout } = useAuth();
 
   if (!isAuthenticated) {
@@ -37,6 +37,7 @@ export default function App() {
               <Route path="/network"   element={<GlobalNetwork />} />
               <Route path="/settings"  element={<Settings />}      />
               <Route path="/profile"   element={<Profile />}       />
+              <Route path="/ai"        element={<AIAssistant />}   />
               <Route path="*"          element={<Navigate to="/" replace />} />
             </Routes>
           </div>
