@@ -18,7 +18,7 @@ from typing import Optional
 
 import numpy as np
 import uvicorn
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -168,7 +168,7 @@ class PDFRequest(BaseModel):
 #  НОТАРИУС
 # ═══════════════════════════════════════════════════════════════════════════
 @app.post("/notary/generate", response_model=NotaryResponse, tags=["Нотариус"])
-async def generate_document(req: NotaryRequest):
+async def generate_document(req: NotaryRequest = Body(...)):
     relevant = _find_relevant(req.description, top_k=4)
     law_text = "\n\n---\n\n".join(relevant) if relevant else "Используй общие нормы права."
 

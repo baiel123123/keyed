@@ -33,6 +33,7 @@ public class NotaryService {
 
     public NotaryService() {
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SEC))
                 .build();
         this.json = new ObjectMapper();
