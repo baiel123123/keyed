@@ -4,15 +4,16 @@ import LogoIcon from '../ui/LogoIcon.jsx';
 import SignUp from './SignUp.jsx';
 
 export default function Login() {
-  const { login }   = useAuth();
-  const [view,      setView]     = useState('login');
+  const { login } = useAuth();
+  const [view, setView] = useState('login');
+
   // Переименовали переменную в loginInput, так как туда можно вводить и username
   const [loginInput, setLoginInput] = useState('');
-  const [password,  setPassword] = useState('');
-  const [showPw,    setShowPw]   = useState(false);
-  const [remember,  setRemember] = useState(false);
-  const [loading,   setLoading]  = useState(false);
-  const [error,     setError]    = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   if (view === 'signup') {
     return <SignUp onSwitch={() => setView('login')} />;
@@ -23,11 +24,11 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    // 1. Динамически получаем URL бэкенда из окружения Vercel/Vite
+    // 1. Динамически получаем URL бэкенда из окружения Vite
     const BASE_URL = import.meta.env.VITE_API_URL || '';
 
     try {
-      // 2. Подставляем BASE_URL, чтобы запрос летел на Render в продакшене
+      // 2. Подставляем BASE_URL, чтобы запрос летел на правильный порт (10000)
       const res = await fetch(`${BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,9 +36,9 @@ export default function Login() {
         body: JSON.stringify({ email: loginInput.trim(), password }),
       });
 
-      // Если бэкенд на Render спит / запускается
+      // Если бэкенд спит (актуально для облачных деплоев)
       if (res.status === 502 || res.status === 503 || res.status === 504) {
-        const currentBackend = BASE_URL || 'http://localhost:8080';
+        const currentBackend = BASE_URL || 'http://localhost:10000';
         setError(`Server is spinning up. Please check backend at: ${currentBackend}`);
         setLoading(false);
         return;
@@ -51,11 +52,11 @@ export default function Login() {
         return;
       }
 
-      // Pass payload + remember preference to AuthContext
+      // Передаем payload (пользователя и токен) в AuthContext
       login(data.payload, remember);
 
     } catch (err) {
-      const currentBackend = BASE_URL || 'http://localhost:8080';
+      const currentBackend = BASE_URL || 'http://localhost:10000';
       setError(`Cannot reach server at ${currentBackend}. Please check your connection.`);
       console.error("Login fatal error:", err);
       setLoading(false);
@@ -101,7 +102,6 @@ export default function Login() {
 
           {/* Username or Email Input */}
           <div className="input-group">
-            {/* Изменили плейсхолдер и лейбл под новые возможности бэка */}
             <div className="input-label">Username or Email</div>
             <div className="input-icon-wrap">
               <svg className="input-icon-left" width="14" height="14" viewBox="0 0 14 14" fill="none">

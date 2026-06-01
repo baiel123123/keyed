@@ -1,8 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import LogoIcon from '../ui/LogoIcon.jsx';
 
-// qwe
-
 const NAV_PRIMARY = [
   {
     to: '/',
@@ -47,6 +45,18 @@ const NAV_PRIMARY = [
       </svg>
     ),
   },
+  {
+    to: '/ai',
+    label: 'AI Legal Suite',
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" className="nav-icon">
+        <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/>
+        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
+    badge: 'AI',
+  },
 ];
 
 const NAV_BOTTOM = [
@@ -82,8 +92,6 @@ const ArrowIcon = () => (
 );
 
 export default function Sidebar({ onSignOut }) {
-  // Sign-out reloads the page which resets React state → returns to Login screen
-  // Use prop from App.jsx which calls AuthContext.logout()
   const handleSignOut = () => { if (onSignOut) onSignOut(); };
 
   return (
@@ -98,7 +106,7 @@ export default function Sidebar({ onSignOut }) {
 
       <nav className="sidebar-nav">
         <div className="nav-section-label">Main</div>
-        {NAV_PRIMARY.map(({ to, label, icon }) => (
+        {NAV_PRIMARY.map(({ to, label, icon, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -107,6 +115,7 @@ export default function Sidebar({ onSignOut }) {
           >
             {icon}
             {label}
+            {badge && <span className="nav-ai-badge">{badge}</span>}
             <ArrowIcon />
           </NavLink>
         ))}

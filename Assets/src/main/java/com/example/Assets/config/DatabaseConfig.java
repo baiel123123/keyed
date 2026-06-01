@@ -16,6 +16,10 @@ public class DatabaseConfig {
             rawUrl = System.getenv("DATABASE_URL");
         }
 
+        // Достаем креды из окружения (с фолбэком на твои локальные)
+        String envUser = System.getenv("POSTGRES_USER") != null ? System.getenv("POSTGRES_USER") : "postgres";
+        String envPass = System.getenv("POSTGRES_PASSWORD") != null ? System.getenv("POSTGRES_PASSWORD") : "12302005";
+
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("org.postgresql.Driver");
 
@@ -23,10 +27,8 @@ public class DatabaseConfig {
             // Если Render передал строку в формате postgresql://user:pass@host:port/db
             if (rawUrl.startsWith("postgresql://")) {
                 try {
-                    // Убираем схему
                     String cleanUrl = rawUrl.replace("postgresql://", "");
 
-                    // Разделяем на credentials и host/db
                     String[] authAndHost = cleanUrl.split("@");
                     String[] credentials = authAndHost[0].split(":");
                     String username = credentials[0];
@@ -36,7 +38,6 @@ public class DatabaseConfig {
                     String hostWithPort = hostAndDb[0];
                     String databaseName = hostAndDb[1];
 
-                    // Явно прописываем параметры пула, минуя сырой парсинг URL драйвером
                     String jdbcUrl = "jdbc:postgresql://" + hostWithPort + "/" + databaseName;
 
                     config.setJdbcUrl(jdbcUrl);
@@ -44,20 +45,22 @@ public class DatabaseConfig {
                     config.setPassword(password);
 
                 } catch (Exception e) {
-                    // Если регулярка упала, пробуем фолбэк с прямым добавлением jdbc:
                     config.setJdbcUrl("jdbc:" + rawUrl);
+                    config.setUsername(envUser);
+                    config.setPassword(envPass);
                 }
             } else {
                 config.setJdbcUrl(rawUrl);
+                config.setUsername(envUser);
+                config.setPassword(envPass);
             }
         } else {
-            // Локальный фолбэк для разработки
             config.setJdbcUrl("jdbc:postgresql://localhost:5432/keyed");
             config.setUsername("postgres");
-            config.setPassword("postgres");
+            config.setPassword("keyed_secure"); // ИСПРАВЛЕНО ЗДЕСЬ
+            config.setPassword("12302005");
         }
 
-        // Оптимальные тайм-ауты для облачных БД
         config.setInitializationFailTimeout(60000);
         config.setConnectionTimeout(30000);
 
