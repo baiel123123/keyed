@@ -15,9 +15,14 @@ COPY --from=build /app/target/*.jar app.jar
 COPY phash_engine.py .
 COPY watermark_engine.py .
 COPY req.txt .
+COPY rag_notary_engine.py .
+COPY start.sh /app/start.sh.
+RUN chmod +x /app/start.sh.
+
 RUN pip3 install --no-cache-dir -r req.txt --break-system-packages 2>/dev/null || true
 RUN mkdir -p KeyedVault/Protected KeyedVault/Originals
 
+
 EXPOSE 10000
 
-ENTRYPOINT ["java", "-Xmx400m", "-jar", "app.jar"]
+CMD ["/app/start.sh"]
